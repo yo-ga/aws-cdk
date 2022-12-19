@@ -227,7 +227,7 @@ describe('cluster', () => {
       instanceType: new ec2.InstanceType('t2.medium'),
     });
 
-    Template.fromStack(stack).hasResourceProperties('AWS::AutoScaling::LaunchConfiguration', {
+    Template.fromStack(stack).hasResourceProperties('AWS::EC2::LaunchTemplate', {
       SecurityGroups: [
         { 'Fn::GetAtt': ['ClusterselfmanagedInstanceSecurityGroup64468C3A', 'GroupId'] },
         { 'Fn::GetAtt': ['Cluster9EE0221C', 'ClusterSecurityGroupId'] },

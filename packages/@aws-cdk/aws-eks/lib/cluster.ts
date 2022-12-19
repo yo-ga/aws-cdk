@@ -1671,9 +1671,14 @@ export class Cluster extends ClusterBase {
     if (options.machineImageType === MachineImageType.BOTTLEROCKET && options.bootstrapOptions !== undefined) {
       throw new Error('bootstrapOptions is not supported for Bottlerocket');
     }
-    const asg = new autoscaling.AutoScalingGroup(this, id, {
-      ...options,
+
+    const securityGroup = new ec2.SecurityGroup(this, 'InstanceSecurityGroup', {
       vpc: this.vpc,
+      allowAllOutbound: options.allowAllOutbound !== false,
+    });
+    const launchTemplate = new ec2.LaunchTemplate(this, `LaunchTemplate${id}`, {
+      instanceType: options.instanceType,
+      securityGroup: securityGroup,
       machineImage: options.machineImageType === MachineImageType.BOTTLEROCKET ?
         new BottleRocketImage({
           kubernetesVersion: this.version.version,
@@ -1683,6 +1688,13 @@ export class Cluster extends ClusterBase {
           cpuArch: cpuArchForInstanceType(options.instanceType),
           kubernetesVersion: this.version.version,
         }),
+    });
+
+    const asgOptions = <autoscaling.CommonAutoScalingGroupProps>{ options };
+    const asg = new autoscaling.AutoScalingGroup(this, id, {
+      ...asgOptions,
+      vpc: this.vpc,
+      launchTemplate: launchTemplate,
     });
 
     this.connectAutoScalingGroupCapacity(asg, {
